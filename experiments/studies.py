@@ -24,7 +24,7 @@ def profile(m, components, t=0.0, discrete=False):
 def convergence():
     rows = []
     for study in ("space", "time"):
-        for method in BASE:
+        for method in (BASE if study == "space" else ALL):
             prev = None
             sizes = (16, 32, 64, 128) if study == "space" else (128, 256, 512, 1024)
             for size in sizes:

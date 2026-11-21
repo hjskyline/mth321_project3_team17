@@ -10,6 +10,8 @@ import tempfile
 
 from experiments import figures
 from experiments import studies
+from experiments import transfer
+from experiments.readout import write_readout
 
 
 ROOT = Path(__file__).resolve().parent
@@ -34,13 +36,23 @@ def main():
         stability = studies.stability()
         startup = studies.startup()
         cost, matched = studies.cost()
+        validation = transfer.transfer()
+        points, pulse = transfer.pulse()
+        spike = transfer.positivity()
+        overhead = transfer.controller_cost()
         for name, rows in (("convergence", convergence), ("stability", stability),
-                           ("startup", startup), ("cost_trials", cost), ("matched_cost", matched)):
+                           ("startup", startup), ("cost_trials", cost), ("matched_cost", matched),
+                           ("transfer", validation), ("pulse_profiles", points), ("pulse_errors", pulse),
+                           ("positivity", spike), ("controller_cost", overhead)):
             write_table(out / f"{name}.csv", rows)
         figures.convergence_figure(convergence, out / "convergence.png")
         figures.stability_figure(stability, out / "stability.png")
         figures.startup_figure(startup, out / "startup.png")
-        figures.cost_figure(cost, studies.COST_TARGETS, out / "cost.png")
+        figures.cost_figure(cost, matched, out / "cost.png")
+        figures.pulse_figure(points, pulse, out / "pulse.png")
+        figures.positivity_figure(spike, out / "positivity.png")
+        figures.transfer_figure(validation, overhead, out / "transfer.png")
+        write_readout(out/"README.md", pulse, spike, validation, overhead, matched, convergence)
         figures.transient(out / "startup.gif")
         environment = dict(python=platform.python_version(), system=platform.system(),
                            system_release=platform.release(), arch=platform.machine(),
