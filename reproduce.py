@@ -27,7 +27,6 @@ def write_table(path, rows):
 def main():
     subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
                    cwd=ROOT, check=True)
-    subprocess.run([sys.executable, "experiments/heat_baseline.py"], cwd=ROOT, check=True)
     dest = ROOT / "results"
     dest.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(dir=dest) as tmp:
