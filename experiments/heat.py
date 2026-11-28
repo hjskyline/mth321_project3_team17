@@ -4,8 +4,10 @@ M denotes the number of equal spatial intervals. Both endpoint values are zero.
 All methods use the same second-order centred spatial operator with kappa = 1.
 """
 import numpy as np
+from scipy.integrate import solve_ivp
 from scipy.sparse import diags
 from scipy.sparse.linalg import splu
+from .ode_solvers import FixedStepTheta
 
 
 def grid(m):
@@ -57,22 +59,27 @@ def evolve(initial, dt, steps, method, save=()):
     wanted = set(save) | {steps}
     if any(not isinstance(i, int) or not 0 <= i <= steps for i in wanted):
         raise ValueError("snapshot index outside integration interval")
-    states = {0: u.copy()} if 0 in wanted else {}
-    r = dt * (len(u) + 1)**2
-    if method != "FTCS":
-        n = len(u)
-        off = np.full(n - 1, -r / 2)
-        matrix = diags((off, np.full(n, 1 + r), off), (-1, 0, 1), format="csc")
-        lu = splu(matrix)
-    weight = r if method == "FTCS" else r / 2
-    for step in range(1, steps + 1):
-        if method == "Rannacher" and step == 1:
-            u = lu.solve(lu.solve(u))
-        else:
-            rhs = (1 - 2 * weight) * u
-            rhs[1:] += weight * u[:-1]
-            rhs[:-1] += weight * u[1:]
-            u = rhs if method == "FTCS" else lu.solve(rhs)
-        if step in wanted:
-            states[step] = u.copy()
-    return states
+
+    r = (len(u) + 1) ** 2
+
+    def fun(_t, u):
+        rhs = -2.0 * u
+        rhs[1:] += u[:-1]
+        rhs[:-1] += u[1:]
+        return r * rhs
+
+    n = len(u)
+    off = np.full(n - 1, r)
+    matrix = diags((off, np.full(n, -2.0 * r), off), (-1, 0, 1), format="csc")
+
+    soln = solve_ivp(
+        fun,
+        (0.0, dt * steps),
+        initial,
+        method=FixedStepTheta,
+        num_steps=steps,
+        jac=matrix,
+        theta=0.0 if method == "FTCS" else 0.5 if method == "CN" else "Rannacher",
+    )
+    ret = {i: soln.y.T[i] for i in wanted}
+    return ret
