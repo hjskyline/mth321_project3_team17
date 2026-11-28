@@ -44,7 +44,9 @@ def write_readout(path, pulse, spike, validation, costs, matched, convergence):
 
 ![Decision map](startup.png)
 
-每格对应一次给定权重和步长的实验，显示满足首步时间误差容限 0.01 的选择。42 格中，普通 CN 在 24 格已达标，10 格需要阻尼，另有 8 格两种全步方案都超标。颜色和文字同时表示决策。[逐项误差](startup.csv) · [高频衰减动画](startup.gif)
+每格对应一次给定权重和步长的实验，显示满足首步时间误差容限 0.01 的选择。42 格中，普通 CN 在 24 格已达标，10 格需要阻尼，另有 8 格两种全步方案都超标。颜色和文字同时表示决策。[逐项误差](startup.csv)
+
+![高频衰减动画](startup.gif)
 
 ![Transfer and work](transfer.png)
 
