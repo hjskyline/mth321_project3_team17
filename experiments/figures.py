@@ -224,6 +224,7 @@ def transient(path):
              (("Exact grid evolution", "0.15"), ("CN", COLORS["CN"]), ("Rannacher", COLORS["Rannacher"]))}
     lines["Exact grid evolution"].set_linestyle("--")
     ax.set(xlim=(0,1), ylim=(-0.28,0.28), xlabel="Position x", ylabel="Temperature minus low mode")
+    ax.set_yscale("asinh", linear_width=1e-4)
     ax.legend(loc="lower right", fontsize=8)
 
     def frame(i):
