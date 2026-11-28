@@ -1,21 +1,31 @@
 """Generate a short presentation guide from the measured tables."""
 
 
-def write_readout(path, pulse, spike, validation, costs, matched, convergence):
-    early = {r["method"]:r["linf_pde"] for r in pulse if r["step"]==1}
-    last = {r["method"]:r for r in spike if r["r"]==16}
-    passed = sum(r["first_l2"]<=r["tolerance"] for r in validation)
-    gap = max(abs(r["first_l2"]-r["predicted_l2"]) for r in validation)
+def write_readout(
+    path,
+    *,
+    pulse_errors,
+    positivity,
+    transfer,
+    controller_cost,
+    matched_cost,
+    convergence,
+    **extra_kwargs,
+):
+    early = {r["method"]: r["linf_pde"] for r in pulse_errors if r["step"] == 1}
+    last = {r["method"]: r for r in positivity if r["r"] == 16}
+    passed = sum(r["first_l2"] <= r["tolerance"] for r in transfer)
+    gap = max(abs(r["first_l2"] - r["predicted_l2"]) for r in transfer)
     orders = {r["method"]:r["pairwise_order"] for r in convergence if r["study"]=="time"}
     costlines = []
-    for t in sorted({r["tolerance"] for r in costs}):
-        a,b = [next(r for r in costs if r["tolerance"]==t and r["policy"]==name)
+    for t in sorted({r["tolerance"] for r in controller_cost}):
+        a,b = [next(r for r in controller_cost if r["tolerance"]==t and r["policy"]==name)
                for name in ("Uniform CN","Controlled")]
         costlines.append(f"| {t:g} | {a['total_solves']} / {b['total_solves']} | "
                          f"{a['median_ms']:.2f} / {b['median_ms']:.2f} | "
                          f"{b['worst_l2']:.4g} |")
     baseline = [f"| {r['target']:g} | {r['method']} | {r['steps']} | {r['error']:.3g} | {r['median_ms']:.2f} |"
-                for r in matched if r["eligible"]]
+                for r in matched_cost if r["eligible"]]
     guide = f"""# 实验结果与展示顺序
 
 ## 1 · 同一个热斑，为什么会算出不同的边缘？
@@ -50,7 +60,7 @@ def write_readout(path, pulse, spike, validation, costs, matched, convergence):
 
 ![Transfer and work](transfer.png)
 
-把双模态判据推广到实测网格温度的完整离散正弦谱。三个新初值、三种网格和三种步长组成 27 个输入，每个输入测试三档容限。首步 **{passed}/{len(validation)}** 次达到目标。用独立的矩阵指数作用检验，预测误差与实测误差的最大绝对差为 **{gap:.2e}**。尖峰只占一个网格点，改变网格会改变其物理宽度。该判据控制首步的离散时间误差；最终时刻和连续 PDE 的误差应另外检验。[每个输入的预测、独立验证和终点误差](transfer.csv)
+把双模态判据推广到实测网格温度的完整离散正弦谱。三个新初值、三种网格和三种步长组成 27 个输入，每个输入测试三档容限。首步 **{passed}/{len(transfer)}** 次达到目标。用独立的矩阵指数作用检验，预测误差与实测误差的最大绝对差为 **{gap:.2e}**。尖峰只占一个网格点，改变网格会改变其物理宽度。该判据控制首步的离散时间误差；最终时刻和连续 PDE 的误差应另外检验。[每个输入的预测、独立验证和终点误差](transfer.csv)
 
 ## 5 · 计算量下降，实际用时怎样？
 
